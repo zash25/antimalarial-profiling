@@ -1,7 +1,7 @@
 # Antimalarial-profiling
 High-throughput profiling for antimalarial compound screening using ChemBERTa data.
 
-**Project Overview**
+**Project Overview (To be Modified)**
 - **Goal:**: Provide an open-source, reproducible Python pipeline to fine-tune ChemBERTa on bioactivity data (SMILES → IC50) and rapidly screen for Plasmodium falciparum Dihydroorotate Dehydrogenase (PfDHODH) inhibitors.
 - **Approach:**: Extract IC50 data from ChEMBL, preprocess SMILES with RDKit, fine-tune a ChemBERTa transformer (HuggingFace/PyTorch), and evaluate classification/regression performance.
 
