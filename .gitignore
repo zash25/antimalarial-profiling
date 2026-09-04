@@ -1,0 +1,6 @@
+AGENTS.md
+PLAN.md
+user_outputs/
+__pycache__/
+data/raw/
+data/processed/

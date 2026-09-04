@@ -26,18 +26,19 @@ pip install -r requirements.txt
 - **Typical dependencies:**: `pandas`, `numpy`, `scikit-learn`, `matplotlib`, `seaborn`, `torch`, `transformers`, `datasets`, `rdkit` (or `rdkit-pypi` where applicable).
 
 **Quick Start**
-- Place your local ChEMBL SQLite export (or query results) into a `data/` folder.
-- Run the SQL extraction script to pull PfDHODH assays and standard IC50 values.
+- Use the ChEMBL webresource client to identify the target and write metadata into `data/`.
+- Run the extraction script to pull PfDHODH assays and standard IC50 values.
 
 Example (high-level):
 ```bash
-python scripts/extract_chembl_pf_dhodh.py --db path/to/chembl.db --out data/pf_dhodh.csv
-python scripts/preprocess_smiles.py --in data/pf_dhodh.csv --out data/pf_dhodh_clean.csv
-python train/fine_tune_chemberta.py --train data/pf_dhodh_clean.csv --model outputs/chemberta_pf_dhodh
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase"
+python scripts/extract_chembl_pf_dhodh.py --target-chembl-id CHEMBL3486 --standard-type IC50 --out data/raw/pf_dhodh_ic50_raw.csv
+python scripts/preprocess_smiles.py --in data/raw/pf_dhodh_ic50_raw.csv --out data/processed/pf_dhodh_clean.csv
+python train/fine_tune_chemberta.py --train data/processed/pf_dhodh_clean.csv --model outputs/chemberta_pf_dhodh
 ```
 
 **Data Extraction & Preprocessing**
-- **SQL extraction:**: Filter ChEMBL for PfDHODH target assays and standard IC50 measurements; export SMILES and activity columns.
+- **ChEMBL extraction:**: Use `chembl_webresource_client` to find PfDHODH targets and retrieve standard IC50 measurements.
 - **RDKit curation:**: Canonicalize SMILES, remove salts/fragments, validate molecules, and optionally standardize tautomeric forms.
 - **Labeling:**: Binarize IC50 values into active/inactive using a configurable threshold (e.g., 1 µM) or treat as regression with log-transformed IC50.
 
@@ -50,7 +51,7 @@ python train/fine_tune_chemberta.py --train data/pf_dhodh_clean.csv --model outp
 - `scripts/`: SQL extraction and preprocessing scripts.
 - `train/`: training and evaluation scripts for fine-tuning ChemBERTa.
 - `notebooks/`: exploratory analysis, visualization, and attention mapping notebooks.
-- `models/` or `outputs/`: trained checkpoints and example inference scripts.
+- `outputs/`: trained checkpoints and example inference scripts.
 - `requirements.txt`: pinned Python dependencies.
 
 **Usage Notes & Next Steps**

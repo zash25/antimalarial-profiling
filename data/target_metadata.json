@@ -1,0 +1,93 @@
+{
+  "candidate_count": 11,
+  "candidates": [
+    {
+      "organism": "Homo sapiens",
+      "pref_name": "Dihydroorotate dehydrogenase (quinone), mitochondrial",
+      "target_chembl_id": "CHEMBL1966",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 9606
+    },
+    {
+      "organism": "Mus musculus",
+      "pref_name": "Dihydroorotate dehydrogenase (quinone), mitochondrial",
+      "target_chembl_id": "CHEMBL2991",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 10090
+    },
+    {
+      "organism": "Rattus norvegicus",
+      "pref_name": "Dihydroorotate dehydrogenase (quinone), mitochondrial",
+      "target_chembl_id": "CHEMBL2383",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 10116
+    },
+    {
+      "organism": "Plasmodium falciparum",
+      "pref_name": "Dihydroorotate dehydrogenase",
+      "target_chembl_id": "CHEMBL3486",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 5833
+    },
+    {
+      "organism": "Saccharomyces cerevisiae S288c",
+      "pref_name": "Dihydroorotate dehydrogenase (fumarate)",
+      "target_chembl_id": "CHEMBL5621",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 559292
+    },
+    {
+      "organism": "Plasmodium falciparum (isolate 3D7)",
+      "pref_name": "Dihydroorotate dehydrogenase (quinone), mitochondrial",
+      "target_chembl_id": "CHEMBL3588732",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 36329
+    },
+    {
+      "organism": "Plasmodium berghei (strain Anka)",
+      "pref_name": "Dihydroorotate dehydrogenase (quinone), mitochondrial",
+      "target_chembl_id": "CHEMBL3988598",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 5823
+    },
+    {
+      "organism": "Plasmodium vivax (strain Salvador I)",
+      "pref_name": "Dihydroorotate dehydrogenase, mitochondrial, putative",
+      "target_chembl_id": "CHEMBL3988602",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 126793
+    },
+    {
+      "organism": "Leishmania major",
+      "pref_name": "Dihydroorotate dehydrogenase (fumarate)",
+      "target_chembl_id": "CHEMBL4295843",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 5664
+    },
+    {
+      "organism": "Schistosoma mansoni",
+      "pref_name": "Dihydroorotate dehydrogenase (quinone), mitochondrial",
+      "target_chembl_id": "CHEMBL4523950",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 6183
+    },
+    {
+      "organism": "Aspergillus fumigatus",
+      "pref_name": "Dihydroorotate dehydrogenase (quinone), mitochondrial",
+      "target_chembl_id": "CHEMBL4630893",
+      "target_type": "SINGLE PROTEIN",
+      "tax_id": 746128
+    }
+  ],
+  "created_at_utc": "2026-09-04T23:13:07.958052+00:00",
+  "organism": "Plasmodium falciparum",
+  "organism_match_count": 2,
+  "query": "dihydroorotate dehydrogenase",
+  "selected_target": {
+    "organism": "Plasmodium falciparum",
+    "pref_name": "Dihydroorotate dehydrogenase",
+    "target_chembl_id": "CHEMBL3486",
+    "target_type": "SINGLE PROTEIN",
+    "tax_id": 5833
+  }
+}
