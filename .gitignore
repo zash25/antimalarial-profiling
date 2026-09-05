@@ -4,3 +4,4 @@ user_outputs/
 __pycache__/
 data/raw/
 data/processed/
+personal_notes.txt
