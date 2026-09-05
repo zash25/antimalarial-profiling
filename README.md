@@ -1,21 +1,24 @@
-# Antimalarial-profiling
-High-throughput profiling for antimalarial compound screening using ChemBERTa data.
+# Antimalarial Profiling
 
-**Project Overview (To be Modified)**
-- **Goal:**: Provide an open-source, reproducible Python pipeline to fine-tune ChemBERTa on bioactivity data (SMILES → IC50) and rapidly screen for Plasmodium falciparum Dihydroorotate Dehydrogenase (PfDHODH) inhibitors.
-- **Approach:**: Extract IC50 data from ChEMBL, preprocess SMILES with RDKit, fine-tune a ChemBERTa transformer (HuggingFace/PyTorch), and evaluate classification/regression performance.
+High-throughput antimalarial compound profiling with ChEMBL bioactivity data and ChemBERTa.
 
-**Manuscript Structure**
-- **Abstract:**: Background, methodology (SQL extraction, SMILES preprocessing, fine-tuning), results, conclusion.
-- **Introduction:**: Public-health context, ChEMBL as data source, rationale for 1D SMILES-based transformers, research objective.
-- **Methodology:**: SQL & ChEMBL extraction, RDKit curation, ChemBERTa model and tokenizer, fine-tuning protocol and hyperparameters.
-- **Results & Evaluation:**: ROC-AUC, precision/recall/F1, ROC/confusion plots, inference speed comparison to docking.
-- **Discussion & Conclusion:**: Implications, limitations, open science statement.
+## Project Overview
 
-**Setup & Dependencies**
-- **Recommended Python environment:**: Use a virtual environment or Conda. RDKit is easiest to install via Conda.
+This project is building a reproducible Python pipeline to retrieve ChEMBL activity data, prepare SMILES/activity datasets, fine-tune ChemBERTa, and evaluate antimalarial compound prediction models.
 
-Example (conda):
+The default case study is *Plasmodium falciparum* dihydroorotate dehydrogenase (PfDHODH) inhibition using IC50 data. The CLI is intentionally configurable: users can provide another target query and organism when they want to profile a different ChEMBL target.
+
+Example:
+
+```bash
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase"
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --organism "Plasmodium falciparum"
+```
+
+## Setup
+
+RDKit is usually easiest to install with Conda, especially on Windows.
+
 ```bash
 conda create -n chemberta python=3.10 -y
 conda activate chemberta
@@ -23,47 +26,62 @@ conda install -c conda-forge rdkit -y
 pip install -r requirements.txt
 ```
 
-- **Typical dependencies:**: `pandas`, `numpy`, `scikit-learn`, `matplotlib`, `seaborn`, `torch`, `transformers`, `datasets`, `rdkit` (or `rdkit-pypi` where applicable).
+For the current target-discovery phase, `pip install -r requirements.txt` is enough if you already have a suitable Python environment.
 
-**Quick Start**
-- Use the ChEMBL webresource client to identify the target and write metadata into `data/`.
-- Run the extraction script to pull PfDHODH assays and standard IC50 values.
+## Quick Start
 
-Example (high-level):
+Identify a ChEMBL target and write selected metadata to `data/target_metadata.json`:
+
 ```bash
 python antimalarial_profile.py --query "dihydroorotate dehydrogenase"
+```
+
+Useful options:
+
+```bash
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --organism "Plasmodium falciparum"
+python antimalarial_profile.py --query "lactate dehydrogenase" --organism "Plasmodium falciparum" --out data/target_metadata.json
+```
+
+Planned downstream workflow:
+
+```bash
 python scripts/extract_chembl_pf_dhodh.py --target-chembl-id CHEMBL3486 --standard-type IC50 --out data/raw/pf_dhodh_ic50_raw.csv
 python scripts/preprocess_smiles.py --in data/raw/pf_dhodh_ic50_raw.csv --out data/processed/pf_dhodh_clean.csv
 python train/fine_tune_chemberta.py --train data/processed/pf_dhodh_clean.csv --model outputs/chemberta_pf_dhodh
 ```
 
-**Data Extraction & Preprocessing**
-- **ChEMBL extraction:**: Use `chembl_webresource_client` to find PfDHODH targets and retrieve standard IC50 measurements.
-- **RDKit curation:**: Canonicalize SMILES, remove salts/fragments, validate molecules, and optionally standardize tautomeric forms.
-- **Labeling:**: Binarize IC50 values into active/inactive using a configurable threshold (e.g., 1 µM) or treat as regression with log-transformed IC50.
+## Data Extraction and Preprocessing
 
-**Model Fine-Tuning (High-level)**
-- **Model:**: ChemBERTa (RoBERTa-like) tokenizer for SMILES and HuggingFace `transformers` fine-tuning with PyTorch.
-- **Training:**: Use stratified Train/Val/Test splits, monitor ROC-AUC and F1, save best checkpoints, and log hyperparameters.
+- ChEMBL target discovery uses `chembl_webresource_client` to search by target preferred name and organism.
+- Activity extraction will retrieve standardized measures such as IC50 for the selected `target_chembl_id`.
+- RDKit preprocessing will canonicalize SMILES, remove invalid molecules, handle salts/fragments, deduplicate compounds, and prepare labels.
+- Labels may use a configurable IC50 threshold, such as 1 uM, or regression targets from transformed activity values.
 
-**Repository Layout (recommended)**
-- `data/`: raw and processed data outputs.
-- `scripts/`: SQL extraction and preprocessing scripts.
-- `train/`: training and evaluation scripts for fine-tuning ChemBERTa.
-- `notebooks/`: exploratory analysis, visualization, and attention mapping notebooks.
-- `outputs/`: trained checkpoints and example inference scripts.
-- `requirements.txt`: pinned Python dependencies.
+## Model Fine-Tuning
 
-**Usage Notes & Next Steps**
-**VS Code Workflow (Using VS Code Exclusively)**
-- **Develop & run scripts:** Use the VS Code Python extension and the integrated terminal to run `scripts/` and `train/` scripts; prefer `python scripts/...` for reproducibility.
-- **Environment:** Create virtualenv or Conda env from VS Code's Python selector; install `rdkit` via Conda if needed.
-- **Interactive work:** Use VS Code's Interactive Window or the built-in Jupyter support for ad-hoc exploration and inline plots — no separate Jupyter server required.
-- **Debugging & tasks:** Use the VS Code debugger (`launch.json`) for breakpoints and the `Tasks` system to run repeatable commands.
-- **Docstrings & code:** Include triple-quoted docstrings in functions/classes — VS Code shows them on hover and they work with documentation tools.
-- **Plots & visualization:** `plt.show()` opens a native window; for reproducible or headless runs, `plt.savefig()` is recommended and files can be opened from VS Code or the OS. Use the Plot Viewer for quick inspection.
-- **Notebooks optional:** Notebooks are optional — prefer scripts for training/production and use Interactive Window for exploration and figures.
+The intended model workflow uses HuggingFace/PyTorch ChemBERTa models over curated SMILES strings. Training will use reproducible train/validation/test splits, tracked random seeds, and metrics such as ROC-AUC, PR-AUC, F1, precision, and recall.
 
-**Usage Notes & Next Steps**
-- This README reflects the manuscript outline and intended project structure; scripts referenced above are placeholders to implement.
-- Next tasks: add `requirements.txt`, add extraction and training scripts, and include example notebooks demonstrating results and plots.
+## Repository Layout
+
+- `antimalarial_profile.py`: public CLI entry point.
+- `scripts/`: ChEMBL extraction, molecule enrichment, and preprocessing utilities.
+- `train/`: model training and evaluation scripts.
+- `data/`: small metadata plus local raw/processed data outputs.
+- `notebooks/`: optional exploratory analysis.
+- `outputs/`: generated reports, figures, checkpoints, and model artifacts.
+- `requirements.txt`: Python package dependencies.
+
+## Current Status
+
+Implemented:
+
+- ChEMBL client dependency.
+- Public target-discovery CLI.
+- PfDHODH target discovery with `CHEMBL3486` selected as the current default case-study target.
+
+Next steps:
+
+- Implement activity extraction.
+- Enrich activity rows with molecule metadata and canonical SMILES.
+- Add preprocessing, labeling, baseline models, ChemBERTa fine-tuning, and final evaluation outputs.
