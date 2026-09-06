@@ -4,7 +4,7 @@ High-throughput antimalarial compound profiling with ChEMBL bioactivity data and
 
 ## Project Overview
 
-This project is building a reproducible Python pipeline to retrieve ChEMBL activity data, prepare SMILES/activity datasets, fine-tune ChemBERTa, and evaluate antimalarial compound prediction models.
+This project is building a reproducible Python pipeline to retrieve ChEMBL activity data on chemical molecules and organisms, prepare SMILES/activity datasets, fine-tune ChemBERTa, and evaluate antimalarial compound prediction models.
 
 The default case study is *Plasmodium falciparum* dihydroorotate dehydrogenase (PfDHODH) inhibition using IC50 data. The CLI is intentionally configurable: users can provide another target query and organism when they want to profile a different ChEMBL target.
 
