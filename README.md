@@ -1,10 +1,10 @@
 # Antimalarial Profiling
 
-High-throughput antimalarial compound profiling with ChEMBL bioactivity data and ChemBERTa.
+Reproducible compound profiling from ChEMBL bioactivity data to baseline and ChemBERTa models.
 
 ## Project Overview
 
-This project is building a reproducible Python pipeline to retrieve ChEMBL activity data on chemical molecules and organisms, prepare SMILES/activity datasets, fine-tune ChemBERTa, and evaluate antimalarial compound prediction models.
+The pipeline retrieves ChEMBL activity data, enriches and curates SMILES, creates active/inactive labels, trains a Morgan-fingerprint random forest and ChemBERTa classifier, and writes evaluation figures and metrics.
 
 The default case study is *Plasmodium falciparum* dihydroorotate dehydrogenase (PfDHODH) inhibition using IC50 data. The CLI is intentionally configurable: users can provide another target query and organism when they want to profile a different ChEMBL target.
 
@@ -26,62 +26,72 @@ conda install -c conda-forge rdkit -y
 pip install -r requirements.txt
 ```
 
-For the current target-discovery phase, `pip install -r requirements.txt` is enough if you already have a suitable Python environment.
+`requirements.txt` also supports a pure-pip setup where wheels are available. PyTorch will use CUDA automatically when a compatible GPU is installed; otherwise ChemBERTa training runs on CPU.
 
 ## Quick Start
 
-Identify a ChEMBL target and write selected metadata to `data/target_metadata.json`:
+Discover a target only:
 
 ```bash
 python antimalarial_profile.py --query "dihydroorotate dehydrogenase"
 ```
 
-Useful options:
+Run the complete workflow from discovery through final figures:
+
+```bash
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --run-all
+```
+
+The complete command creates raw and curated data in ignored `data/raw/` and `data/processed/`, trained models under `outputs/`, and private phase-by-phase previews under ignored `user_outputs/`.
+
+Other useful options:
 
 ```bash
 python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --organism "Plasmodium falciparum"
 python antimalarial_profile.py --query "lactate dehydrogenase" --organism "Plasmodium falciparum" --out data/target_metadata.json
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --run-all --threshold-nm 500 --chemberta-epochs 5
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --run-all --skip-chemberta
 ```
 
-Planned downstream workflow:
+## Individual Commands
 
 ```bash
-python scripts/extract_chembl_pf_dhodh.py --target-chembl-id CHEMBL3486 --standard-type IC50 --out data/raw/pf_dhodh_ic50_raw.csv
-python scripts/preprocess_smiles.py --in data/raw/pf_dhodh_ic50_raw.csv --out data/processed/pf_dhodh_clean.csv
-python train/fine_tune_chemberta.py --train data/processed/pf_dhodh_clean.csv --model outputs/chemberta_pf_dhodh
+python scripts/extract_chembl_activity.py --target-chembl-id CHEMBL3486 --standard-type IC50 --out data/raw/chembl3486_ic50_raw.csv
+python scripts/enrich_chembl_molecules.py --in data/raw/chembl3486_ic50_raw.csv --out data/raw/chembl3486_ic50_with_smiles.csv
+python scripts/preprocess_smiles.py --in data/raw/chembl3486_ic50_with_smiles.csv --out data/processed/chembl3486_ic50_clean.csv
+python scripts/make_labels.py --in data/processed/chembl3486_ic50_clean.csv --threshold-nm 1000 --out data/processed/chembl3486_ic50_labeled.csv
+python train/train_baseline.py --data data/processed/chembl3486_ic50_labeled.csv --out outputs/baselines/random_forest
+python train/fine_tune_chemberta.py --data data/processed/chembl3486_ic50_labeled.csv --out outputs/chemberta_target --seed 42
 ```
 
 ## Data Extraction and Preprocessing
 
 - ChEMBL target discovery uses `chembl_webresource_client` to search by target preferred name and organism.
-- Activity extraction will retrieve standardized measures such as IC50 for the selected `target_chembl_id`.
-- RDKit preprocessing will canonicalize SMILES, remove invalid molecules, handle salts/fragments, deduplicate compounds, and prepare labels.
-- Labels may use a configurable IC50 threshold, such as 1 uM, or regression targets from transformed activity values.
+- Activity extraction retrieves the requested standardized measure, defaulting to IC50, for the selected `target_chembl_id`.
+- RDKit preprocessing canonicalizes SMILES, keeps the largest salt fragment, rejects non-positive/censored/unsupported measurements, converts units to nM, and retains the median IC50 per canonical SMILES.
+- Binary labels use a configurable inclusive IC50 threshold; the default is 1000 nM (1 uM).
 
 ## Model Fine-Tuning
 
-The intended model workflow uses HuggingFace/PyTorch ChemBERTa models over curated SMILES strings. Training will use reproducible train/validation/test splits, tracked random seeds, and metrics such as ROC-AUC, PR-AUC, F1, precision, and recall.
+The model workflow uses HuggingFace/PyTorch ChemBERTa over curated SMILES alongside a Morgan fingerprint random-forest baseline. Both use fixed-seed stratified train/validation/test splits and report ROC-AUC, PR-AUC, F1, precision, and recall.
 
 ## Repository Layout
 
 - `antimalarial_profile.py`: public CLI entry point.
-- `scripts/`: ChEMBL extraction, molecule enrichment, and preprocessing utilities.
-- `train/`: model training and evaluation scripts.
+- `.gitignore`: contains list of files and folders to be ignored during commits.
+- `requirements.txt`: list of libraries and packages to install.
 - `data/`: small metadata plus local raw/processed data outputs.
-- `notebooks/`: optional exploratory analysis.
-- `outputs/`: generated reports, figures, checkpoints, and model artifacts.
+- `outputs/`: generated reports, figures, checkpoints, and model artifacts; ignored by Git.
+- `scripts/`: ChEMBL extraction, molecule enrichment, and preprocessing utilities.
+- `tests/`: run tests on making labels and preprocessed smiles.
+- `train/`: model training and evaluation scripts.
+- `user_outputs/`: [optionally] create this folder to view artefacts generated at each phase completion.
 - `requirements.txt`: Python package dependencies.
 
-## Current Status
+## Reference Run
 
-Implemented:
+The bundled PfDHODH case study selected `CHEMBL3486`. Its recorded run retrieved 602 IC50 rows, curated 368 unique molecules, and labeled 201 active versus 167 inactive compounds at 1000 nM. Results can change as ChEMBL updates and are not a claim of general model performance.
 
-- ChEMBL client dependency.
-- Public target-discovery CLI.
-- PfDHODH target discovery with `CHEMBL3486` selected as the current default case-study target.
+## Data and Citation
 
-Next steps:
-
-- Implement activity extraction.
-- Enrich activity rows with molecule metadata and canonical SMILES.
-- Add preprocessing, labeling, baseline models, ChemBERTa fine-tuning, and final evaluation outputs.
+Live data comes from ChEMBL through `chembl_webresource_client`; do not commit large retrieved datasets, model checkpoints, or private `user_outputs/` artifacts. Cite [ChEMBL](https://www.ebi.ac.uk/chembl/) and the ChemBERTa model used in your analysis or manuscript, and record the query, target ID, activity type, threshold, split seed, and retrieval date with reported results.

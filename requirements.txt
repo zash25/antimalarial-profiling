@@ -1,1 +1,11 @@
-chembl_webresource_client
+chembl_webresource_client>=0.10.9
+pandas>=2.2
+numpy>=1.26
+rdkit>=2024.3.5
+matplotlib>=3.8
+scikit-learn>=1.5
+joblib>=1.4
+torch>=2.4
+transformers>=4.45
+safetensors>=0.4
+pytest>=8.3
