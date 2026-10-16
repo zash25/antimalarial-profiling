@@ -34,15 +34,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--run-all",
         action="store_true",
-        help="Run discovery, extraction, curation, analysis, baseline, and ChemBERTa training.",
+        help="Run discovery, curation, both models, repeated scaffold evaluation, and reports.",
     )
     parser.add_argument("--standard-type", default="IC50", help="ChEMBL activity measure for --run-all.")
     parser.add_argument("--threshold-nm", type=float, default=1000.0, help="Active IC50 threshold for --run-all.")
     parser.add_argument("--chemberta-epochs", type=int, default=3, help="Fine-tuning epochs for --run-all.")
+    parser.add_argument("--evaluation-repeats", type=int, default=5, help="Repeated scaffold holdouts in the final evaluation phase.")
     parser.add_argument(
         "--skip-chemberta", action="store_true", help="Finish through the baseline model only."
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.run_all and args.evaluation_repeats < 2:
+        parser.error("--evaluation-repeats must be at least 2 when --run-all is used.")
+    return args
 
 
 def main() -> None:
@@ -72,6 +76,7 @@ def main() -> None:
     from scripts.plot_dataset import main as plot_main
     from scripts.preprocess_smiles import main as preprocess_main
     from scripts.summarize_dataset import main as summarize_main
+    from train.evaluate_scaffold import main as scaffold_evaluation_main
     from train.evaluate_model import main as evaluate_main
     from train.train_baseline import main as baseline_main
 
@@ -94,8 +99,22 @@ def main() -> None:
 
         chemberta_main(["--data", labeled_path, "--out", "outputs/chemberta_target", "--seed", "42", "--epochs", str(args.chemberta_epochs)])
         evaluate_main(["--data", labeled_path, "--model", "outputs/chemberta_target", "--out", "outputs/reports/chemberta_metrics.json"])
-    figures_main(["--out", "outputs/figures"])
-    print("Completed full profiling workflow. Inspect user_outputs/ for phase-by-phase results.")
+    scaffold_args = [
+        "--data", labeled_path,
+        "--out", "outputs/robust_evaluation",
+        "--repeats", str(args.evaluation_repeats),
+        "--seed", "42",
+        "--chemberta-epochs", str(args.chemberta_epochs),
+        "--metadata", args.out,
+        "--target-chembl-id", target_id,
+        "--standard-type", args.standard_type,
+        "--threshold-nm", str(args.threshold_nm),
+    ]
+    if args.skip_chemberta:
+        scaffold_args.append("--skip-chemberta")
+    scaffold_evaluation_main(scaffold_args)
+    figures_main(["--out", "outputs/figures", "--robust-summary", "outputs/robust_evaluation/summary.json"])
+    print("Completed profiling and repeated scaffold evaluation. Inspect user_outputs/ for phase-by-phase results.")
 
 
 if __name__ == "__main__":

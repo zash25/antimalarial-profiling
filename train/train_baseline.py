@@ -19,7 +19,6 @@ from rdkit import Chem, DataStructs
 from rdkit.Chem import rdFingerprintGenerator
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import ConfusionMatrixDisplay, RocCurveDisplay, accuracy_score, average_precision_score, f1_score, precision_score, recall_score, roc_auc_score
-from sklearn.model_selection import train_test_split
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -28,6 +27,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts._utils import update_observation_log, utc_now
+from train.split_utils import indices_from_splits, random_stratified_indices
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -37,6 +37,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model", default="random_forest", choices=["random_forest"])
     parser.add_argument("--out", required=True)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--split-ids", help="Optional CSV assigning canonical SMILES to shared train/validation/test splits.")
+    parser.add_argument("--no-preview", action="store_true", help="Do not replace the single-run user preview with this run's outputs.")
     return parser.parse_args(argv)
 
 
@@ -72,14 +74,13 @@ def main(argv: list[str] | None = None) -> None:
     labels = dataset["activity_label"].to_numpy(dtype=int)
     if len(np.unique(labels)) != 2:
         raise ValueError("Baseline training needs both active and inactive labels.")
-    train_val_idx, test_idx = train_test_split(
-        np.arange(len(dataset)), test_size=0.2, random_state=args.seed, stratify=labels
+    splits = (
+        indices_from_splits(dataset, args.split_ids)
+        if args.split_ids
+        else random_stratified_indices(labels, args.seed)
     )
-    train_idx, validation_idx = train_test_split(
-        train_val_idx,
-        test_size=0.25,
-        random_state=args.seed,
-        stratify=labels[train_val_idx],
+    train_idx, validation_idx, test_idx = (
+        splits["train"], splits["validation"], splits["test"]
     )
     features = fingerprint_matrix(dataset["canonical_smiles"].tolist())
     classifier = RandomForestClassifier(
@@ -129,28 +130,29 @@ def main(argv: list[str] | None = None) -> None:
     figure.savefig(out_dir / "roc_curve.png", dpi=180)
     plt.close(figure)
 
-    preview_dir = Path("user_outputs/phase_07_baselines")
-    preview_dir.mkdir(parents=True, exist_ok=True)
-    for name in ["confusion_matrix.png", "roc_curve.png"]:
-        shutil.copy2(out_dir / name, preview_dir / name)
-    summary = [
-        "# Baseline Metrics",
-        "",
-        f"- Test ROC-AUC: {metrics['test']['roc_auc']:.3f}",
-        f"- Test PR-AUC: {metrics['test']['pr_auc']:.3f}",
-        f"- Test F1: {metrics['test']['f1']:.3f}",
-        f"- Test accuracy: {metrics['test']['accuracy']:.3f}",
-        f"- Split sizes: {metrics['split_sizes']}",
-    ]
-    (preview_dir / "baseline_metrics.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
-    update_observation_log(
-        "Phase 7: Random Forest Baseline",
-        [
-            f"Trained a 2048-bit Morgan fingerprint random forest with seed {args.seed}.",
-            f"Test ROC-AUC: {metrics['test']['roc_auc']:.3f}; PR-AUC: {metrics['test']['pr_auc']:.3f}.",
-            f"Inspect {preview_dir / 'baseline_metrics.md'} and its diagnostic plots.",
-        ],
-    )
+    if not args.no_preview:
+        preview_dir = Path("user_outputs/phase_07_baselines")
+        preview_dir.mkdir(parents=True, exist_ok=True)
+        for name in ["confusion_matrix.png", "roc_curve.png"]:
+            shutil.copy2(out_dir / name, preview_dir / name)
+        summary = [
+            "# Baseline Metrics",
+            "",
+            f"- Test ROC-AUC: {metrics['test']['roc_auc']:.3f}",
+            f"- Test PR-AUC: {metrics['test']['pr_auc']:.3f}",
+            f"- Test F1: {metrics['test']['f1']:.3f}",
+            f"- Test accuracy: {metrics['test']['accuracy']:.3f}",
+            f"- Split sizes: {metrics['split_sizes']}",
+        ]
+        (preview_dir / "baseline_metrics.md").write_text("\n".join(summary) + "\n", encoding="utf-8")
+        update_observation_log(
+            "Phase 7: Random Forest Baseline",
+            [
+                f"Trained a 2048-bit Morgan fingerprint random forest with seed {args.seed}.",
+                f"Test ROC-AUC: {metrics['test']['roc_auc']:.3f}; PR-AUC: {metrics['test']['pr_auc']:.3f}.",
+                f"Inspect {preview_dir / 'baseline_metrics.md'} and its diagnostic plots.",
+            ],
+        )
     print(f"Baseline test ROC-AUC: {metrics['test']['roc_auc']:.3f}")
     print(f"Wrote model and metrics to {out_dir}")
 

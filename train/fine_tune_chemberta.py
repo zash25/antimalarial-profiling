@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 import torch
 from sklearn.metrics import average_precision_score, f1_score, precision_score, recall_score, roc_auc_score
-from sklearn.model_selection import train_test_split
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
@@ -29,6 +28,7 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts._utils import update_observation_log, utc_now
+from train.split_utils import indices_from_splits, random_stratified_indices
 
 
 class SmilesDataset(Dataset):
@@ -58,6 +58,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--learning-rate", type=float, default=2e-5)
     parser.add_argument("--max-length", type=int, default=128)
     parser.add_argument("--device", choices=["auto", "cpu", "cuda"], default="auto")
+    parser.add_argument("--split-ids", help="Optional CSV assigning canonical SMILES to shared train/validation/test splits.")
+    parser.add_argument("--no-save-model", action="store_true", help="Keep only the best in-memory weights, metrics, and predictions.")
+    parser.add_argument("--no-preview", action="store_true", help="Do not replace the single-run user preview with this run's outputs.")
     return parser.parse_args(argv)
 
 
@@ -102,8 +105,14 @@ def main(argv: list[str] | None = None) -> None:
     labels = dataset[args.label_column].to_numpy(dtype=int)
     if len(np.unique(labels)) != 2:
         raise ValueError("ChemBERTa fine-tuning needs both active and inactive labels.")
-    train_val_idx, test_idx = train_test_split(np.arange(len(dataset)), test_size=0.2, random_state=args.seed, stratify=labels)
-    train_idx, validation_idx = train_test_split(train_val_idx, test_size=0.25, random_state=args.seed, stratify=labels[train_val_idx])
+    splits = (
+        indices_from_splits(dataset, args.split_ids)
+        if args.split_ids
+        else random_stratified_indices(labels, args.seed)
+    )
+    train_idx, validation_idx, test_idx = (
+        splits["train"], splits["validation"], splits["test"]
+    )
     device_name = (
         "cuda" if args.device == "auto" and torch.cuda.is_available()
         else "cpu" if args.device == "auto"
@@ -125,6 +134,7 @@ def main(argv: list[str] | None = None) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     progress: list[dict[str, float | int]] = []
     best_validation = float("-inf")
+    best_weights: dict[str, torch.Tensor] | None = None
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -142,10 +152,21 @@ def main(argv: list[str] | None = None) -> None:
         progress.append({"epoch": epoch, "train_loss": float(np.mean(losses)), **validation_metrics})
         if validation_metrics["roc_auc"] > best_validation:
             best_validation = validation_metrics["roc_auc"]
-            model.save_pretrained(out_dir)
-            tokenizer.save_pretrained(out_dir)
+            best_weights = {
+                name: tensor.detach().cpu().clone()
+                for name, tensor in model.state_dict().items()
+            }
+            if not args.no_save_model:
+                model.save_pretrained(out_dir)
+                tokenizer.save_pretrained(out_dir)
 
-    best_model = AutoModelForSequenceClassification.from_pretrained(out_dir).to(device)
+    if args.no_save_model:
+        if best_weights is None:
+            raise RuntimeError("Training did not produce a best validation checkpoint.")
+        model.load_state_dict(best_weights)
+        best_model = model
+    else:
+        best_model = AutoModelForSequenceClassification.from_pretrained(out_dir).to(device)
     test_labels, test_probability = probabilities(best_model, test_loader, device)
     metrics = {
         "model_type": "chemberta_binary_classifier", "model_name": args.model_name,
@@ -170,12 +191,13 @@ def main(argv: list[str] | None = None) -> None:
     figure.tight_layout()
     figure.savefig(out_dir / "training_loss.png", dpi=180)
     plt.close(figure)
-    preview_dir = Path("user_outputs/phase_08_chemberta")
-    preview_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(out_dir / "training_progress.csv", preview_dir / "training_progress.csv")
-    shutil.copy2(out_dir / "training_loss.png", preview_dir / "training_loss.png")
-    (preview_dir / "run_summary.md").write_text("\n".join(["# ChemBERTa Run Summary", "", f"- Device: {device}", f"- Epochs: {args.epochs}", f"- Best validation ROC-AUC: {best_validation:.3f}", f"- Test ROC-AUC: {metrics['test']['roc_auc']:.3f}", f"- Test PR-AUC: {metrics['test']['pr_auc']:.3f}"]) + "\n", encoding="utf-8")
-    update_observation_log("Phase 8: ChemBERTa Fine-Tuning", [f"Fine-tuned {args.model_name} for {args.epochs} epoch(s) on {device}.", f"Test ROC-AUC: {metrics['test']['roc_auc']:.3f}; PR-AUC: {metrics['test']['pr_auc']:.3f}.", f"Inspect {preview_dir / 'run_summary.md'} and training_loss.png."])
+    if not args.no_preview:
+        preview_dir = Path("user_outputs/phase_08_chemberta")
+        preview_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(out_dir / "training_progress.csv", preview_dir / "training_progress.csv")
+        shutil.copy2(out_dir / "training_loss.png", preview_dir / "training_loss.png")
+        (preview_dir / "run_summary.md").write_text("\n".join(["# ChemBERTa Run Summary", "", f"- Device: {device}", f"- Epochs: {args.epochs}", f"- Best validation ROC-AUC: {best_validation:.3f}", f"- Test ROC-AUC: {metrics['test']['roc_auc']:.3f}", f"- Test PR-AUC: {metrics['test']['pr_auc']:.3f}"]) + "\n", encoding="utf-8")
+        update_observation_log("Phase 8: ChemBERTa Fine-Tuning", [f"Fine-tuned {args.model_name} for {args.epochs} epoch(s) on {device}.", f"Test ROC-AUC: {metrics['test']['roc_auc']:.3f}; PR-AUC: {metrics['test']['pr_auc']:.3f}.", f"Inspect {preview_dir / 'run_summary.md'} and training_loss.png."])
     print(f"ChemBERTa test ROC-AUC: {metrics['test']['roc_auc']:.3f}")
     print(f"Wrote model and metrics to {out_dir}")
 

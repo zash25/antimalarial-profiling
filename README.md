@@ -36,7 +36,7 @@ Discover a target only:
 python antimalarial_profile.py --query "dihydroorotate dehydrogenase"
 ```
 
-Run the complete workflow from discovery through final figures:
+Run the complete workflow from discovery through repeated scaffold evaluation and final figures. The default final phase trains both models over five scaffold-disjoint repeats, so it takes longer than a single training run:
 
 ```bash
 python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --run-all
@@ -49,7 +49,7 @@ Other useful options:
 ```bash
 python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --organism "Plasmodium falciparum"
 python antimalarial_profile.py --query "lactate dehydrogenase" --organism "Plasmodium falciparum" --out data/target_metadata.json
-python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --run-all --threshold-nm 500 --chemberta-epochs 5
+python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --run-all --threshold-nm 500 --chemberta-epochs 5 --evaluation-repeats 5
 python antimalarial_profile.py --query "dihydroorotate dehydrogenase" --run-all --skip-chemberta
 ```
 
@@ -62,6 +62,7 @@ python scripts/preprocess_smiles.py --in data/raw/chembl3486_ic50_with_smiles.cs
 python scripts/make_labels.py --in data/processed/chembl3486_ic50_clean.csv --threshold-nm 1000 --out data/processed/chembl3486_ic50_labeled.csv
 python train/train_baseline.py --data data/processed/chembl3486_ic50_labeled.csv --out outputs/baselines/random_forest
 python train/fine_tune_chemberta.py --data data/processed/chembl3486_ic50_labeled.csv --out outputs/chemberta_target --seed 42
+python train/evaluate_scaffold.py --data data/processed/chembl3486_ic50_labeled.csv --out outputs/robust_evaluation --repeats 5 --seed 42
 ```
 
 ## Data Extraction and Preprocessing
@@ -73,7 +74,7 @@ python train/fine_tune_chemberta.py --data data/processed/chembl3486_ic50_labele
 
 ## Model Fine-Tuning
 
-The model workflow uses HuggingFace/PyTorch ChemBERTa over curated SMILES alongside a Morgan fingerprint random-forest baseline. Both use fixed-seed stratified train/validation/test splits and report ROC-AUC, PR-AUC, F1, precision, and recall.
+The model workflow uses HuggingFace/PyTorch ChemBERTa over curated SMILES alongside a Morgan fingerprint random-forest baseline. Initial diagnostics use a fixed-seed stratified split. The final evaluation repeats Bemis-Murcko scaffold-grouped 60/20/20 holdouts; both models receive the same molecule IDs for each repeat, and a scaffold is never divided between train, validation, and test. Results include per-repeat metrics, split composition, and mean plus sample standard deviation. Repeated splits overlap with one another, so that standard deviation describes split sensitivity and is not a confidence interval.
 
 ## Repository Layout
 
@@ -82,6 +83,7 @@ The model workflow uses HuggingFace/PyTorch ChemBERTa over curated SMILES alongs
 - `requirements.txt`: list of libraries and packages to install.
 - `data/`: small metadata plus local raw/processed data outputs.
 - `outputs/`: generated reports, figures, checkpoints, and model artifacts; ignored by Git.
+- `outputs/robust_evaluation/`: repeated scaffold split IDs, per-repeat predictions/metrics, and aggregate results; ignored by Git.
 - `scripts/`: ChEMBL extraction, molecule enrichment, and preprocessing utilities.
 - `tests/`: run tests on making labels and preprocessed smiles.
 - `train/`: model training and evaluation scripts.
@@ -90,7 +92,9 @@ The model workflow uses HuggingFace/PyTorch ChemBERTa over curated SMILES alongs
 
 ## Reference Run
 
-The bundled PfDHODH case study selected `CHEMBL3486`. Its recorded run retrieved 602 IC50 rows, curated 368 unique molecules, and labeled 201 active versus 167 inactive compounds at 1000 nM. Results can change as ChEMBL updates and are not a claim of general model performance.
+The bundled PfDHODH case study selected `CHEMBL3486`. Its recorded run retrieved 602 IC50 rows, curated 368 unique molecules, and labeled 201 active versus 167 inactive compounds at 1000 nM. Five scaffold-disjoint repeats yielded mean ROC-AUC / PR-AUC of 0.648 / 0.705 for the Morgan random forest and 0.464 / 0.527 for ChemBERTa. These are exploratory results from one ChEMBL target and a small dataset, not evidence of general model performance. ChEMBL updates can also change retrieved records.
+
+The final grouped evaluation is saved in `outputs/robust_evaluation/summary.md`; the final comparison figure and manuscript summary are `outputs/figures/model_comparison.png` and `outputs/figures/manuscript_results.md`. The same summaries and a split-by-split preview are copied to `user_outputs/phase_11_robust_evaluation/` for local review.
 
 ## Data and Citation
 
