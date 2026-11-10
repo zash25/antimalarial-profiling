@@ -3,6 +3,9 @@ PLAN.md
 user_outputs/
 __pycache__/
 personal_notes.txt
+MANUSCRIPT_DRAFT.md
+MANUSCRIPT_OUTLINE.md
+Manuscript-Antimalrial Drug Project.docx
 
 # Keep the bundled CHEMBL3486 case-study data; ignore other generated datasets.
 data/*
