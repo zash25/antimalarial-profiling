@@ -1,0 +1,46 @@
+{
+  "reference_filename": "dhodh_05_bioactivity_data_2class_pIC50.csv",
+  "reference_sha256": "142f133884b7fc142dea5c7707ceff0d513ae9fe6bf54e085f2fd51e05e61876",
+  "reference_row_count": 465,
+  "class_counts": {
+    "active": 202,
+    "inactive": 263
+  },
+  "seed_start": 42,
+  "repeats": 5,
+  "split": "60/20/20 Bemis-Murcko scaffold holdout; same assignments for all models",
+  "feature_filter": "VarianceThreshold(0.1), fit on training partition only",
+  "balancing": "Random oversampling of training partition only",
+  "random_forest": {
+    "n_estimators": 100,
+    "probability_cutoff": 0.5
+  },
+  "padel_fingerprints": {
+    "PaDEL PubChem RF": "PubchemFingerprinter.xml",
+    "PaDEL SubstructureCount RF": "SubstructureFingerprintCount.xml"
+  },
+  "padel_threads": 1,
+  "padel_tautomer_standardization": false,
+  "xml_sha256": {
+    "PaDEL PubChem RF": "44a8bed33a68b3357121052d928057d9368603d73222c5ecb2a217bbd1e44f26",
+    "PaDEL SubstructureCount RF": "cbefad9e9eadfa08c2c0464b7d5dd818b3dabffa12a4bc5d0bcaf1a77977f743"
+  },
+  "feature_matrix_sha256": {
+    "PaDEL PubChem RF": "0400407c3884b1d90864b34c43acb12848ebf036507172bccd6acef4be53b33a",
+    "PaDEL SubstructureCount RF": "10c9e23fa59c5dafc6b3f37e99e005f24b457ed42f8647416a854b083df23ac6",
+    "Morgan RF": "5e92399898031ef9278292fb592b0f4baef95bf45c5d36f56847ce5604f2771d"
+  },
+  "software": {
+    "python": "3.13.13",
+    "numpy": "2.5.3",
+    "pandas": "3.0.5",
+    "scikit_learn": "1.9.1",
+    "padelpy": "0.1.17"
+  },
+  "notes": [
+    "This is a focused reanalysis, not a reproduction of the paper's 12 x 12 model search.",
+    "The reference CSV and PaDEL XML files are external inputs and are not copied into this output.",
+    "The published notebook uses a random 80/20 split in code; this benchmark instead uses shared scaffold-disjoint splits.",
+    "PaDEL tautomer standardization is disabled because repeated runs produced differing fingerprint matrices; input canonical SMILES are retained."
+  ]
+}

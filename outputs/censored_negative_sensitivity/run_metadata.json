@@ -1,0 +1,10 @@
+{
+  "augmented_data_sha256": "b9963d4347c9d6bf04044806a6018c6da5d19d92544a14c1db03803dc58a69dc",
+  "censored_data": "data\\processed\\chembl3486_ic50_rejected_rows.csv",
+  "censored_records_considered": 189,
+  "clean_data": "data\\processed\\chembl3486_ic50_clean.csv",
+  "eligible_unique_structures_added": 182,
+  "repeats": 5,
+  "seed": 42,
+  "threshold_nM": 1000.0
+}

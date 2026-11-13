@@ -21,7 +21,7 @@ The command-line program lets a user choose a biological target and run the avai
 3. Trains two models on part of the labeled data.
 4. Tests their predictions on held-out molecules and saves tables, summaries, and model outputs.
 
-The saved results for the repeated evaluation are in [`user_outputs/phase_11_robust_evaluation/summary.md`](user_outputs/phase_11_robust_evaluation/summary.md). The manuscript-ready metric summary is in [`outputs/figures/manuscript_results.md`](outputs/figures/manuscript_results.md).
+The saved results for the repeated evaluation are in [`outputs/robust_evaluation/summary.md`](outputs/robust_evaluation/summary.md). The manuscript-ready metric summary is in [`outputs/figures/manuscript_results.md`](outputs/figures/manuscript_results.md).
 
 ## The Models and Their Training
 
@@ -43,6 +43,12 @@ The table shows average scores across those repeats. Higher is generally better.
 | ChemBERTa | 0.464 +/- 0.137 | 0.527 +/- 0.100 | 0.487 +/- 0.169 |
 
 In this dataset and evaluation, the Morgan random forest was the more promising of the two. Its results were moderate and varied between repeats, so it should be treated as a tool for early prioritization, not as a dependable decision-maker. ChemBERTa did not show reliable ability to rank unfamiliar molecules in this test.
+
+## Comparison With the 2025 PfDHODH Study
+
+A 2025 paper analyzed the same ChEMBL target and began with the same reported 602 activity records. We checked the released compound IDs against this project's ChEMBL snapshot: 281 molecules overlapped, and all had the same structures and active/inactive labels. The other 184 molecules in the paper's 465-compound model set were mostly records reported only as censored lower bounds (181); three molecule IDs were not in this project's raw snapshot.
+
+We then tested three fingerprint-based random forests on the paper's 465-compound labeled set using the same five scaffold-held-out splits. PaDEL PubChem had mean ROC-AUC 0.825, Morgan 0.797, and PaDEL SubstructureCount 0.771. These averages varied across the repeated splits, and the analysis is not a reproduction of the paper's full model search. To make descriptor calculation repeatable, the benchmark disables PaDEL's tautomer standardization, which changed fingerprints between repeated runs; it keeps the input canonical structures and applies the same setting to all compounds. The comparison helps check whether a published chemical representation performs on unfamiliar scaffolds under a common test, but it is not a laboratory or prospective test. The comparison figure is [`comparison_2025_pfdhodh.png`](comparison_2025_pfdhodh.png); detailed metrics and provenance are in [`outputs/published_study_benchmark/summary.csv`](outputs/published_study_benchmark/summary.csv) and [`outputs/published_study_benchmark/run_metadata.json`](outputs/published_study_benchmark/run_metadata.json).
 
 ## Molecules and Specific Findings
 

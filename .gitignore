@@ -3,10 +3,13 @@ PLAN.md
 user_outputs/
 __pycache__/
 .vscode
+
+# Public manuscript files and the side-by-side study comparison figure are intentional.
+!Manuscript-Antimalrial Drug Project.docx
 personal_notes.txt
-MANUSCRIPT_DRAFT.md
+Manuscript-Antimalarial Drug Project.docx
 MANUSCRIPT_OUTLINE.md
-Manuscript-Antimalrial Drug Project.docx
+MANUSCRIPT_DRAFT.md
 
 # Keep the bundled CHEMBL3486 case-study data; ignore other generated datasets.
 data/*
@@ -22,14 +25,49 @@ data/processed/*
 !data/processed/chembl3486_ic50_rejected_rows.csv
 !data/processed/chembl3486_rejected_rows.csv
 
-# Keep final reference outputs, but ignore model files and intermediate artifacts.
-outputs/
-!outputs/
+# Share compact manuscript/evaluation results; ignore caches, checkpoints, and bulky per-run artifacts.
 outputs/*
+!outputs/comparison_2025_pfdhodh.png
 !outputs/figures/
 outputs/figures/*
 !outputs/figures/manuscript_results.md
 !outputs/figures/model_comparison.png
+!outputs/figures/assay_support.png
+!outputs/figures/class_balance.png
+!outputs/figures/pic50_distribution.png
 !outputs/robust_evaluation/
 outputs/robust_evaluation/*
 !outputs/robust_evaluation/summary.md
+!outputs/robust_evaluation/summary.json
+!outputs/robust_evaluation/metrics_by_repeat.csv
+!outputs/robust_evaluation/split_summary.csv
+!outputs/robust_evaluation/splits/
+outputs/robust_evaluation/splits/*
+!outputs/robust_evaluation/splits/*.csv
+!outputs/threshold_sensitivity/
+outputs/threshold_sensitivity/*
+!outputs/threshold_sensitivity/summary.md
+!outputs/threshold_sensitivity/summary.csv
+!outputs/threshold_sensitivity/metrics_by_repeat.csv
+!outputs/threshold_sensitivity/run_metadata.json
+!outputs/censored_negative_sensitivity/
+outputs/censored_negative_sensitivity/*
+!outputs/censored_negative_sensitivity/summary.md
+!outputs/censored_negative_sensitivity/augmented_labeled_dataset.csv
+!outputs/censored_negative_sensitivity/metrics_by_repeat.csv
+!outputs/censored_negative_sensitivity/split_summary.csv
+!outputs/censored_negative_sensitivity/run_metadata.json
+!outputs/censored_negative_sensitivity/splits/
+outputs/censored_negative_sensitivity/splits/*
+!outputs/censored_negative_sensitivity/splits/*.csv
+!outputs/published_study_benchmark/
+outputs/published_study_benchmark/*
+!outputs/published_study_benchmark/summary.csv
+!outputs/published_study_benchmark/metrics_by_repeat.csv
+!outputs/published_study_benchmark/split_summary.csv
+!outputs/published_study_benchmark/run_metadata.json
+!outputs/published_study_benchmark/matched_benchmark.png
+!outputs/published_study_benchmark/record_reconciliation.md
+!outputs/published_study_benchmark/splits/
+outputs/published_study_benchmark/splits/*
+!outputs/published_study_benchmark/splits/*.csv

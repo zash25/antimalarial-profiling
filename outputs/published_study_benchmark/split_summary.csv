@@ -1,0 +1,16 @@
+repeat,seed,split,molecules,active,inactive,scaffolds
+1,42,train,266,119,147,84
+1,42,validation,107,46,61,29
+1,42,test,92,37,55,29
+2,43,train,273,118,155,84
+2,43,validation,98,45,53,29
+2,43,test,94,39,55,29
+3,44,train,273,116,157,84
+3,44,validation,94,41,53,29
+3,44,test,98,45,53,29
+4,45,train,270,118,152,84
+4,45,validation,105,45,60,29
+4,45,test,90,39,51,29
+5,46,train,263,113,150,84
+5,46,validation,105,46,59,29
+5,46,test,97,43,54,29

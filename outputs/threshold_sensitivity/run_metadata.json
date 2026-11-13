@@ -1,0 +1,22 @@
+{
+  "data_path": "data\\processed\\chembl3486_ic50_clean.csv",
+  "data_sha256": "d6837577954e83baff013bec898911767dcba7f05129bef99212da9c3042c143",
+  "model": {
+    "bits": 2048,
+    "name": "Morgan random forest",
+    "radius": 2,
+    "trees": 500
+  },
+  "split_files": [
+    "outputs\\robust_evaluation\\splits\\repeat_01_split_ids.csv",
+    "outputs\\robust_evaluation\\splits\\repeat_02_split_ids.csv",
+    "outputs\\robust_evaluation\\splits\\repeat_03_split_ids.csv",
+    "outputs\\robust_evaluation\\splits\\repeat_04_split_ids.csv",
+    "outputs\\robust_evaluation\\splits\\repeat_05_split_ids.csv"
+  ],
+  "thresholds_nM": [
+    500.0,
+    1000.0,
+    2000.0
+  ]
+}
